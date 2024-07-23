@@ -4,17 +4,39 @@
 			<SwiperSlide v-for="movie in movieList" :key="movie.id">
 				<img :src="'https://image.tmdb.org/t/p/original/' + movie.poster_path" alt="Movie Poster"
 					class="h-12 w-auto logo" />
+				<NuxtRating :read-only="false" :rating-step="0.5" @rating-selected="(rate) => ratingHandler(rate, movie.id) " />
 			</SwiperSlide>
 		</Swiper>
+	</UCard>
+	<UCard class="button-card">
+		<UButton @click="">Submit</UButton>
 	</UCard>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-	data(): { movieList: { id: number, title: string, poster_path: string }[] | null } {
+	data(): { 
+		movieList: { id: number, title: string, poster_path: string }[] | null,
+		ratingList: { id: number, rating: number }[],
+	} {
 		return {
 			movieList: null,
+			ratingList: [],
+		}
+	},
+	methods: {
+		ratingHandler(rate: number, movieId: number) {
+			const index = this.ratingList.findIndex(item => item.id === movieId);
+			if (index !== -1) {
+				// Update existing rating
+				this.ratingList[index].rating = rate;
+			} else {
+				// Add new rating
+				this.ratingList.push({ id: movieId, rating: rate });
+			}
+		},
+		async submitHandler() {
 		}
 	},
 	// created() {
@@ -30,4 +52,10 @@ export default defineComponent({
 	},
 })
 </script>
+<style>
+.button-card {
+	display: flex;
+	justify-content: center;
+}
+</style>
 
