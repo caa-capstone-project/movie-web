@@ -9,7 +9,7 @@
 		</Swiper>
 	</UCard>
 	<UCard class="button-card">
-		<UButton @click="">Submit</UButton>
+		<UButton @click="submitHandler">Submit</UButton>
 	</UCard>
 </template>
 <script lang="ts">
@@ -18,26 +18,48 @@ import { defineComponent } from 'vue'
 export default defineComponent({
 	data(): { 
 		movieList: { id: number, title: string, poster_path: string }[] | null,
-		ratingList: { id: number, rating: number }[],
+		ratings: { movieId: number, rating: number }[],
 	} {
 		return {
 			movieList: null,
-			ratingList: [],
+			ratings: [],
 		}
 	},
 	methods: {
 		ratingHandler(rate: number, movieId: number) {
-			const index = this.ratingList.findIndex(item => item.id === movieId);
+			const index = this.ratings.findIndex(item => item.movieId === movieId);
 			if (index !== -1) {
 				// Update existing rating
-				this.ratingList[index].rating = rate;
+				this.ratings[index].rating = rate;
 			} else {
 				// Add new rating
-				this.ratingList.push({ id: movieId, rating: rate });
+				this.ratings.push({ movieId: movieId, rating: rate });
 			}
 		},
 		async submitHandler() {
-		}
+			await this.updateRatings(this.ratings);
+		},
+		async updateRatings(ratings: { movieId: number, rating: number }[]) {
+			try {
+
+				const response = await fetch('http://127.0.0.1:4203/rating', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ userId: 8888, ratings }),
+				});
+
+				if (response.ok) {
+					const data = await response.json();
+					console.log(data);
+				} else {
+					throw new Error('Request failed');
+				}
+			} catch (error) {
+				console.error(error);
+			}
+		},
 	},
 	// created() {
 	// 	console.log('Component created')
