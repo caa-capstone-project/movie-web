@@ -66,11 +66,28 @@ export default defineComponent({
 				method: 'GET'
 			}).then(res => res.json()).catch(err => console.error(err));
 		},
+		async getPreference() {
+			const preferenceResult = await fetch('http://127.0.0.1:4202/preference/8888', {
+				method: 'GET'
+			}).then(res => res.json()).catch(err => {
+				 console.error(err);
+				 return null;
+			});
+			return preferenceResult;
+		},
 	},
 	// created() {
 	// 	console.log('Component created')
 	// },
 	async mounted() {
+		
+		// Navigate to questionnaire page if preference is not set
+		const preference = await this.getPreference();
+		if(!preference){
+			navigateTo('/questionnaire');
+			return;
+		}
+
 		await this.refreshMovieList();
 		console.log('Component mounted')
 	},
