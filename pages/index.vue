@@ -38,9 +38,7 @@ export default defineComponent({
 		},
 		async submitHandler() {
 			await this.updateRatings(this.ratings);
-			this.movieList = await fetch('http://127.0.0.1:4200/api/listmovie/8888', {
-				method: 'GET'
-			}).then(res => res.json()).catch(err => console.error(err));
+			await this.refreshMovieList();
 		},
 		async updateRatings(ratings: { movieId: number, rating: number }[]) {
 			try {
@@ -63,17 +61,18 @@ export default defineComponent({
 				console.error(error);
 			}
 		},
+		async refreshMovieList() {
+			this.movieList = await fetch('http://127.0.0.1:4200/api/listmovie/8888', {
+				method: 'GET'
+			}).then(res => res.json()).catch(err => console.error(err));
+		},
 	},
 	// created() {
 	// 	console.log('Component created')
 	// },
 	async mounted() {
+		await this.refreshMovieList();
 		console.log('Component mounted')
-		this.movieList = await fetch('http://a69226bf1b88f482097c14f2dfe69f92-403154274.us-east-1.elb.amazonaws.com:4200/api/listmovie', {
-			method: 'GET'
-		}).then(res => res.json()).catch(err => console.error(err));
-		console.log('Movie list:', this.movieList);
-		
 	},
 })
 </script>
