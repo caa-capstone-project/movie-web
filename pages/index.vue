@@ -38,6 +38,9 @@ export default defineComponent({
 		},
 		async submitHandler() {
 			await this.updateRatings(this.ratings);
+			this.movieList = await fetch('http://127.0.0.1:4200/api/listmovie/8888', {
+				method: 'GET'
+			}).then(res => res.json()).catch(err => console.error(err));
 		},
 		async updateRatings(ratings: { movieId: number, rating: number }[]) {
 			try {
