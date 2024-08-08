@@ -14,6 +14,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { jwtDecode } from 'jwt-decode';
 
 export default defineComponent({
 	data(): { 
@@ -26,6 +27,67 @@ export default defineComponent({
 		}
 	},
 	methods: {
+		async checkLoginStatus() {
+			const idToken = localStorage.getItem('id_token');
+			if (!idToken) {
+				window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+			}else{
+				this.validateToken(idToken);
+			}
+		},
+		async getToken(code: string) {
+			try {
+				// Exchange the code for tokens using Cognito's /oauth2/token endpoint
+				const response = await fetch(`https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/token`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/x-www-form-urlencoded'
+					},
+					body: new URLSearchParams({
+						grant_type: 'authorization_code',
+						client_id: 'iuq5fkq3oi8u1al39ocik7ro4',
+						code,
+						redirect_uri: 'http://localhost:3000'
+					})
+				});
+
+				const data = await response.json();
+				if (data.id_token) {
+					localStorage.setItem('id_token', data.id_token);
+					this.$router.push('/');
+				} else {
+					console.error('Failed to exchange code for token:', data);
+				}
+			} catch (error) {
+				console.error('Error fetching token:', error);
+			}
+		},
+		validateToken(token: string) {
+			try {
+				const decodedToken: any = jwtDecode(token);
+				const currentTime = Math.floor(Date.now() / 1000);
+				if (decodedToken.exp < currentTime) {
+					console.error('Token has expired');
+					localStorage.removeItem('id_token');
+					window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+				} else {
+					console.log('Token is valid');
+				}
+			} catch (error) {
+				console.error('Invalid token', error);
+				localStorage.removeItem('id_token');
+				window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+			}
+		},
+		getSubFromToken(token: string) {
+			try {
+				const decodedToken: any = jwtDecode(token);
+				return decodedToken.sub;
+			} catch (error) {
+				console.error('Invalid token', error);
+				return null;
+			}
+		},
 		ratingHandler(rate: number, movieId: number) {
 			const index = this.ratings.findIndex(item => item.movieId === movieId);
 			if (index !== -1) {
@@ -80,7 +142,13 @@ export default defineComponent({
 	// 	console.log('Component created')
 	// },
 	async mounted() {
-		
+		const urlParams = new URLSearchParams(window.location.search);
+		const code = urlParams.get('code');
+		if (code) {
+			await this.getToken(code);
+		}
+		await this.checkLoginStatus();
+
 		// Navigate to questionnaire page if preference is not set
 		const preference = await this.getPreference();
 		if(!preference){
