@@ -20,10 +20,12 @@ export default defineComponent({
 	data(): { 
 		movieList: { id: number, title: string, poster_path: string }[] | null,
 		ratings: { movieId: number, rating: number }[],
+		userId: string | null,
 	} {
 		return {
 			movieList: null,
 			ratings: [],
+			userId: null
 		}
 	},
 	methods: {
@@ -33,6 +35,7 @@ export default defineComponent({
 				window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
 			}else{
 				this.validateToken(idToken);
+				this.userId = this.getSubFromToken(idToken);
 			}
 		},
 		async getToken(code: string) {
@@ -79,7 +82,7 @@ export default defineComponent({
 				window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
 			}
 		},
-		getSubFromToken(token: string) {
+		getSubFromToken(token: string): string | null {
 			try {
 				const decodedToken: any = jwtDecode(token);
 				return decodedToken.sub;
@@ -110,7 +113,7 @@ export default defineComponent({
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({ userId: 8888, ratings }),
+					body: JSON.stringify({ userId: this.userId, ratings }),
 				});
 
 				if (response.ok) {
@@ -124,14 +127,20 @@ export default defineComponent({
 			}
 		},
 		async refreshMovieList() {
-			this.movieList = await fetch('http://127.0.0.1:4200/api/listmovie/8888', {
+			this.movieList = await fetch(`http://127.0.0.1:4200/api/listmovie/${this.userId}`, {
 				method: 'GET'
 			}).then(res => res.json()).catch(err => console.error(err));
 		},
 		async getPreference() {
-			const preferenceResult = await fetch('http://127.0.0.1:4202/preference/8888', {
+			const preferenceResult = await fetch(`http://127.0.0.1:4202/preference/${this.userId}`, {
 				method: 'GET'
-			}).then(res => res.json()).catch(err => {
+			}).then(res => {
+				if (!res.ok) {
+					console.error('Failed to fetch preference:', res);
+					return null;
+				}
+				return res.json();
+			}).catch(err => {
 				 console.error(err);
 				 return null;
 			});

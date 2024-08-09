@@ -26,16 +26,17 @@
 <script setup lang="ts">
 import Joi from 'joi'
 import type { FormSubmitEvent } from '#ui/types'
+import { jwtDecode } from 'jwt-decode';
 
 const schema = Joi.object({
-  userId: Joi.number().required(),
+  userId: Joi.string().required(),
   genres: Joi.array().min(1).required(),
   languages: Joi.array().min(1).required(),
   years: Joi.array().min(1).required(),
 })
 
 const state = reactive({
-  userId: 0,
+  userId: null as string | null,
   genres: [],
   languages: [],
   years: [],
@@ -47,7 +48,6 @@ const yearOptions = ['2024', '2023', '2022', '2021', '2020', '2019', '2018', '20
 
 async function onSubmit(event: FormSubmitEvent<any>) {
   // Do something with event.data
-  state.userId = 8888
   console.log(event.data)
 
   try {
@@ -78,6 +78,48 @@ async function onSubmit(event: FormSubmitEvent<any>) {
 const goToIndexPage = () => {
   navigateTo({ path: '/', query: { questionnaireCompleted: 'true' } })
 }
+
+const checkLoginStatus = () => {
+  const idToken = localStorage.getItem('id_token');
+  if (!idToken) {
+    window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+  } else {
+    validateToken(idToken);
+    state.userId = getSubFromToken(idToken);
+  }
+}
+
+const validateToken = (token: string) => {
+  try {
+    const decodedToken: any = jwtDecode(token);
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decodedToken.exp < currentTime) {
+      console.error('Token has expired');
+      localStorage.removeItem('id_token');
+      window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+    } else {
+      console.log('Token is valid');
+    }
+  } catch (error) {
+    console.error('Invalid token', error);
+    localStorage.removeItem('id_token');
+    window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+  }
+}
+
+const getSubFromToken = (token: string): string | null => {
+  try {
+    const decodedToken: any = jwtDecode(token);
+    return decodedToken.sub;
+  } catch (error) {
+    console.error('Invalid token', error);
+    return null;
+  }
+}
+
+onMounted(() => {
+  checkLoginStatus();
+})
 </script>
 <style>
 .form-center {
