@@ -32,7 +32,7 @@ export default defineComponent({
 		async checkLoginStatus() {
 			const idToken = localStorage.getItem('id_token');
 			if (!idToken) {
-				window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+				window.location.href = useRuntimeConfig().public.COGNITO_CLIENT_URL || window.location.href;
 			}else{
 				this.validateToken(idToken);
 				this.userId = this.getSubFromToken(idToken);
@@ -72,14 +72,14 @@ export default defineComponent({
 				if (decodedToken.exp < currentTime) {
 					console.error('Token has expired');
 					localStorage.removeItem('id_token');
-					window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+					window.location.href = useRuntimeConfig().public.COGNITO_CLIENT_URL || window.location.href;
 				} else {
 					console.log('Token is valid');
 				}
 			} catch (error) {
 				console.error('Invalid token', error);
 				localStorage.removeItem('id_token');
-				window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+				window.location.href = useRuntimeConfig().public.COGNITO_CLIENT_URL || window.location.href;
 			}
 		},
 		getSubFromToken(token: string): string | null {
@@ -108,7 +108,7 @@ export default defineComponent({
 		async updateRatings(ratings: { movieId: number, rating: number }[]) {
 			try {
 
-				const response = await fetch('http://127.0.0.1:4203/rating', {
+				const response = await fetch(`${useRuntimeConfig().public.RATING_SERVICE_URL}`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -127,12 +127,12 @@ export default defineComponent({
 			}
 		},
 		async refreshMovieList() {
-			this.movieList = await fetch(`http://127.0.0.1:4200/api/listmovie/${this.userId}`, {
+			this.movieList = await fetch(`${useRuntimeConfig().public.MOVIE_SERVICE_URL + '/listmovie/' + this.userId}`, {
 				method: 'GET'
 			}).then(res => res.json()).catch(err => console.error(err));
 		},
 		async getPreference() {
-			const preferenceResult = await fetch(`http://127.0.0.1:4202/preference/${this.userId}`, {
+			const preferenceResult = await fetch(`${useRuntimeConfig().public.PREFERENCE_SERVICE_URL + '/' + this.userId}`, {
 				method: 'GET'
 			}).then(res => {
 				if (!res.ok) {

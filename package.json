@@ -4,11 +4,11 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "build": "nuxi build",
+    "dev": "nuxi dev --dotenv .env.local",
+    "generate": "nuxi generate --dotenv .env.production",
+    "preview": "nuxi preview",
+    "postinstall": "nuxi prepare"
   },
   "dependencies": {
     "@nuxt/ui": "^2.16.0",

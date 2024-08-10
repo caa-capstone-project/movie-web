@@ -51,7 +51,7 @@ async function onSubmit(event: FormSubmitEvent<any>) {
   console.log(event.data)
 
   try {
-    const response = await fetch('http://127.0.0.1:4202/preference', {
+    const response = await fetch(`${useRuntimeConfig().public.PREFERENCE_SERVICE_URL}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ const goToIndexPage = () => {
 const checkLoginStatus = () => {
   const idToken = localStorage.getItem('id_token');
   if (!idToken) {
-    window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+    window.location.href = useRuntimeConfig().public.COGNITO_CLIENT_URL || window.location.href;
   } else {
     validateToken(idToken);
     state.userId = getSubFromToken(idToken);
@@ -96,14 +96,14 @@ const validateToken = (token: string) => {
     if (decodedToken.exp < currentTime) {
       console.error('Token has expired');
       localStorage.removeItem('id_token');
-      window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+      window.location.href = useRuntimeConfig().public.COGNITO_CLIENT_URL || window.location.href;
     } else {
       console.log('Token is valid');
     }
   } catch (error) {
     console.error('Invalid token', error);
     localStorage.removeItem('id_token');
-    window.location.href = 'https://movie-advisor.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=iuq5fkq3oi8u1al39ocik7ro4&response_type=code&scope=aws.cognito.signin.user.admin+email+openid+phone+profile&redirect_uri=http%3A%2F%2Flocalhost%3A3000';
+    window.location.href = useRuntimeConfig().public.COGNITO_CLIENT_URL || window.location.href;
   }
 }
 
